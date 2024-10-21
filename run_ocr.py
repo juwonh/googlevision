@@ -1,0 +1,54 @@
+import os, io
+from google.cloud import vision
+
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/jw/.config/gcloud/application_default_credentials.json'
+
+
+# Get text from image using google vision ocr API
+# Write extracted text on a txt file 
+def ocr_image(image_file):
+  client = vision.ImageAnnotatorClient()
+
+  folder = os.path.dirname(image_file)
+  filename, _ = os.path.splitext(os.path.basename(image_file))
+
+  txt_file = folder + '/' + filename + '.txt'
+
+  with open(image_file, "rb") as img:
+      content = img.read()
+
+  image = vision.Image(content=content)
+  response = client.text_detection(image=image)
+  texts = response.text_annotations
+
+  index = 0
+  with open(txt_file, 'w', encoding='utf-8') as fo:
+    for text in texts:
+      vertices = [
+          f"{vertex.x}\t{vertex.y}" for vertex in text.bounding_poly.vertices
+      ]
+
+      if (index == 0):
+        print(f'{text.description}')
+      else:
+        fo.write("{}\t".format(index))
+        fo.write("{}".format("\t".join(vertices)))
+        fo.write("\t{}\n".format(text.description))
+      index += 1
+            
+  if response.error.message:
+      raise Exception(
+          "{}\nFor more info on error messages, check: "
+          "https://cloud.google.com/apis/design/errors".format(response.error.message)
+      )
+
+def ocr_folder(image_folder):
+
+  for file in os.listdir(image_folder):
+    if file.endswith(('.jpeg','.jpg','.png')):
+      image_file = os.path.join(image_folder,file)
+      print(f"Processing {file}...") 
+      ocr_image(image_file)
+
+image_folder = '/home/jw/data/test/4/'
+ocr_folder(image_folder)
