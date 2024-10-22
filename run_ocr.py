@@ -1,4 +1,4 @@
-import os, io
+import os
 from google.cloud import vision
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/jw/.config/gcloud/application_default_credentials.json'
@@ -11,15 +11,20 @@ def ocr_image(image_file):
 
   folder = os.path.dirname(image_file)
   filename, _ = os.path.splitext(os.path.basename(image_file))
-
   txt_file = folder + '/' + filename + '.txt'
 
   with open(image_file, "rb") as img:
-      content = img.read()
+    content = img.read()
 
   image = vision.Image(content=content)
   response = client.text_detection(image=image)
   texts = response.text_annotations
+
+  if response.error.message:
+    raise Exception(
+        "{}\nFor more info on error messages, check: "
+        "https://cloud.google.com/apis/design/errors".format(response.error.message)
+    )
 
   index = 0
   with open(txt_file, 'w', encoding='utf-8') as fo:
@@ -36,11 +41,7 @@ def ocr_image(image_file):
         fo.write("\t{}\n".format(text.description))
       index += 1
             
-  if response.error.message:
-      raise Exception(
-          "{}\nFor more info on error messages, check: "
-          "https://cloud.google.com/apis/design/errors".format(response.error.message)
-      )
+
 
 def ocr_folder(image_folder):
 
