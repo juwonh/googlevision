@@ -3,9 +3,8 @@ from google.cloud import vision
 
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/home/jw/.config/gcloud/application_default_credentials.json'
 
-
-# Get text from image using google vision ocr API
-# Write extracted text on a txt file 
+""" Get text from image using google vision ocr API
+    Write extracted text on a txt file """
 def ocr_image(image_file):
   client = vision.ImageAnnotatorClient()
 
@@ -42,8 +41,8 @@ def ocr_image(image_file):
       index += 1
             
 
-
-def ocr_folder(image_folder):
+""" Run ocr_image for every image in a folder """
+def run_ocr_image(image_folder):
 
   for file in os.listdir(image_folder):
     if file.endswith(('.jpeg','.jpg','.png')):
@@ -52,4 +51,4 @@ def ocr_folder(image_folder):
       ocr_image(image_file)
 
 image_folder = '/home/jw/data/test/4/'
-ocr_folder(image_folder)
+run_ocr_image(image_folder)

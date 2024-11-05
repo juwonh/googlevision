@@ -127,8 +127,7 @@ def combine_txt(boxes, txt):
 
   return newbox, newtxt
     
-
-def initial_bbox(image_file):
+def bbox_first(image_file):
   folder = os.path.dirname(image_file) + '/'
   filename, _ = os.path.splitext(os.path.basename(image_file))  
   txt_file = folder + filename + '.txt'
@@ -142,7 +141,7 @@ def initial_bbox(image_file):
   box, txt = read_bbox(image_file, txt_file)
   draw_bbox(image_file, box, first_box_image, True)
 
-def combined_bbox(image_file):
+def bbox_second(image_file):
   folder = os.path.dirname(image_file) + '/'
   filename, _ = os.path.splitext(os.path.basename(image_file))  
 
@@ -160,9 +159,8 @@ def combined_bbox(image_file):
   second_box_image = resfolder + filename + '_res2.jpg'
   draw_bbox(image_file, newbox, second_box_image, True)
 
+# bbox_first('/home/jw/data/test/4/e2.jpg')
 
-
-# initial_bbox('/home/jw/data/test/4/e2.jpg')
 
 def run_bbox(folder, option):
   files = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
@@ -172,13 +170,60 @@ def run_bbox(folder, option):
     ext = str.lower(ext)
     if ext == '.jpg' or ext == '.jpeg' or ext == '.gif' or ext == '.png' or ext == '.bmp':
       if( option == 1 ):
-        initial_bbox(folder + '/' + file)
+        bbox_first(folder + '/' + file)
       elif ( option == 2):
-        combined_bbox(folder + '/' + file)
+        bbox_second(folder + '/' + file)
 
-""" Generate initial textbox images first"""
+
+def cropimage(image_file):
+  folder = os.path.dirname(image_file) + '/'
+  filename, _ = os.path.splitext(os.path.basename(image_file))  
+
+  newtxt_file = folder + filename + '_.txt'  
+  boxes, txts = read_bbox(image_file, newtxt_file)
+
+  boxfolder = folder + 'box/'
+  if not os.path.isdir(boxfolder):
+    os.mkdir(boxfolder)
+  
+  cropfolder = folder + 'box/' + filename
+  if not os.path.isdir(cropfolder):
+    os.mkdir(cropfolder)
+
+  try:
+    im = Image.open(image_file)
+  except IOError:
+    print("IO Error", image_file)
+  else:
+    width, height = im.size 
+    for i, box in enumerate(boxes):
+      id = int(box[8])
+      xmin = int(box[0])
+      xmax = int(box[2]) 
+      ymin = int(box[1])
+      ymax = int(box[5])
+      im2 = im.crop((xmin,ymin,xmax,ymax))
+      crop_image = cropfolder + '/' + filename + "_" + str(id) + ".jpg"  
+      im2.save(crop_image)   
+
+# cropimage('/home/jw/data/test/4/e2.jpg')
+
+def run_cropimage(folder):
+  files = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+
+  for file in files:
+    filename, ext = os.path.splitext(file)
+    ext = str.lower(ext)
+    if ext == '.jpg' or ext == '.jpeg' or ext == '.gif' or ext == '.png' or ext == '.bmp':
+      cropimage(folder + '/' + file)
+
+''' Step 1. Generate initial textbox images first '''
 # run_bbox('/home/jw/data/test/4',1)
-""" with textbox images in /res folder and edit txt file  """
 
-""" After that, generate second textbox images """
-run_bbox('/home/jw/data/test/4',2)
+''' Step 2. Manually edit txt file based on the images in res folder '''
+
+''' Step 3. Generate second textbox images '''
+# run_bbox('/home/jw/data/test/4',2)
+
+''' Step 4. Crop textbox '''
+# run_cropimage('/home/jw/data/test/4')
