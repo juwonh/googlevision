@@ -50,5 +50,8 @@ def run_ocr_image(image_folder):
       print(f"Processing {file}...") 
       ocr_image(image_file)
 
-image_folder = '/home/jw/data/test/4/'
+
+""" This is where to run googleVision OCR
+"""
+image_folder = '/home/jw/data/test/5/'
 run_ocr_image(image_folder)

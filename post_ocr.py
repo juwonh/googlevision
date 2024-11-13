@@ -67,6 +67,20 @@ def combine_box(box0, box1, txt0, txt1):
   txt2 = txt0 + txt1
   return box2, txt2
   
+def get_intersection(min0, max0, min1, max1, h):
+  h0 = max0 - min0
+  h1 = max1 - min1
+  intersection_start = max(min0, min1)
+  intersection_end = min(max0, max1)
+    
+    # Check if there is a valid intersection
+  if intersection_start <= intersection_end:
+    inter = intersection_end - intersection_start
+    return inter/h
+  else:
+      return 0  # No intersection
+
+
 def combine_txt(boxes, txt):
   """combine adjoining text boxes into one"""
   newbox = []
@@ -77,6 +91,7 @@ def combine_txt(boxes, txt):
   
   for i, box in enumerate(boxes):
     if i == 0:
+      box_pre = box
       id0 = box[8]
       xmin0 = box[0] if box[0] < box[6] else box[6]
       xmax0 = box[2] if box[2] > box[4] else box[4]
@@ -84,9 +99,10 @@ def combine_txt(boxes, txt):
       ymax0 = box[5] if box[5] > box[7] else box[7]
       box0 = [xmin0,ymin0,xmax0,ymin0,xmax0,ymax0,xmin0,ymax0,id0]
       txt0 = txt[0]
-      h0 = ymax0 - ymin0
+      h0 = box[7] - box[1]
       
     else:
+      box_aft = box
       id1 = box[8]
       xmin1 = box[0] if box[0] < box[6] else box[6]
       xmax1 = box[2] if box[2] > box[4] else box[4]
@@ -94,10 +110,17 @@ def combine_txt(boxes, txt):
       ymax1 = box[5] if box[5] > box[7] else box[7]
       box1 = [xmin1,ymin1,xmax1,ymin1,xmax1,ymax1,xmin1,ymax1,id1]
       txt1 = txt[i]
-      h1 = ymax1 - ymin1
+      h1 = box[7] - box[1]
+
+      hmin = min(h0, h1)
+      hmax = max(h0, h1)
       
-      if abs(ymin0-ymin1) < h0*0.6 and abs(ymax0-ymax1) < h0*0.6 and (abs(xmin1-xmax0) < h0*0.2 or (xmin1 < xmax0 and abs(xmin1-xmax0)<h0*0.5)):
+      if get_intersection(ymin0, ymax0, ymin1, ymax1, hmin) > 0.6 and (abs(box_aft[0]-box_pre[2]) < hmax*0.2 or (box_aft[0] < box_pre[2] and abs(box_aft[0]-box_pre[2])<hmax*0.5)):
+        # print( get_intersection(ymin0, ymax0, ymin1, ymax1, hmin))
+        # print(hmax)
+        # print(box_aft[0]-box_pre[2])
         # print("{}{}".format(txt[i-1], txt[i]))
+
         count += 1
         box, txt2 = combine_box(box0,box1,txt0,txt1)
         xmin0 = box[0]
@@ -106,6 +129,7 @@ def combine_txt(boxes, txt):
         ymax0 = box[5]
         box0 =  [xmin0,ymin0,xmax0,ymin0,xmax0,ymax0,xmin0,ymax0,id0]
         txt0 = txt2
+        box_pre = box
         
       else:
         newbox.append(box0)
@@ -118,6 +142,7 @@ def combine_txt(boxes, txt):
         id0 = id1
         h0 = h1
         box0 =  [xmin0,ymin0,xmax0,ymin0,xmax0,ymax0,xmin0,ymax0,id0]
+        box_pre = box
   newbox.append(box0)
   newtxt.append(txt0)
 
@@ -136,7 +161,7 @@ def bbox_first(image_file):
   if not os.path.isdir(resfolder):
     os.mkdir(resfolder)
 
-  first_box_image = resfolder + filename + '_res.jpg'
+  first_box_image = resfolder + filename + '_res1.jpg'
 
   box, txt = read_bbox(image_file, txt_file)
   draw_bbox(image_file, box, first_box_image, True)
@@ -217,13 +242,16 @@ def run_cropimage(folder):
     if ext == '.jpg' or ext == '.jpeg' or ext == '.gif' or ext == '.png' or ext == '.bmp':
       cropimage(folder + '/' + file)
 
+
+imagefolder = '/home/jw/data/test/4'
+
 ''' Step 1. Generate initial textbox images first '''
-# run_bbox('/home/jw/data/test/4',1)
+# run_bbox(imagefolder,1)
 
 ''' Step 2. Manually edit txt file based on the images in res folder '''
 
 ''' Step 3. Generate second textbox images '''
-# run_bbox('/home/jw/data/test/4',2)
+run_bbox(imagefolder,2)
 
 ''' Step 4. Crop textbox '''
-# run_cropimage('/home/jw/data/test/4')
+# run_cropimage(imagefolder)
